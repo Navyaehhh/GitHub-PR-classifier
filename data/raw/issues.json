@@ -1,0 +1,101 @@
+[
+  {
+    "url": "https://api.github.com/repos/scikit-learn/scikit-learn/issues/35119",
+    "repository_url": "https://api.github.com/repos/scikit-learn/scikit-learn",
+    "labels_url": "https://api.github.com/repos/scikit-learn/scikit-learn/issues/35119/labels{/name}",
+    "comments_url": "https://api.github.com/repos/scikit-learn/scikit-learn/issues/35119/comments",
+    "events_url": "https://api.github.com/repos/scikit-learn/scikit-learn/issues/35119/events",
+    "html_url": "https://github.com/scikit-learn/scikit-learn/issues/35119",
+    "id": 5790478388,
+    "node_id": "I_kwDOAAzd1s8AAAABWSOwNA",
+    "number": 35119,
+    "title": "BUG: HistGradientBoosting merges distinct values at upward-rounded midpoints",
+    "user": {
+      "login": "Swapnil-J20",
+      "id": 188242527,
+      "node_id": "U_kgDOCzhaXw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/188242527?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Swapnil-J20",
+      "html_url": "https://github.com/Swapnil-J20",
+      "followers_url": "https://api.github.com/users/Swapnil-J20/followers",
+      "following_url": "https://api.github.com/users/Swapnil-J20/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Swapnil-J20/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Swapnil-J20/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Swapnil-J20/subscriptions",
+      "organizations_url": "https://api.github.com/users/Swapnil-J20/orgs",
+      "repos_url": "https://api.github.com/users/Swapnil-J20/repos",
+      "events_url": "https://api.github.com/users/Swapnil-J20/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Swapnil-J20/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "labels": [
+      {
+        "id": 12995755,
+        "node_id": "MDU6TGFiZWwxMjk5NTc1NQ==",
+        "url": "https://api.github.com/repos/scikit-learn/scikit-learn/labels/Bug",
+        "name": "Bug",
+        "color": "e10c02",
+        "default": false,
+        "description": null,
+        "archived_at": null,
+        "archived_by": null
+      },
+      {
+        "id": 3631152487,
+        "node_id": "LA_kwDOAAzd1s7Ybv1n",
+        "url": "https://api.github.com/repos/scikit-learn/scikit-learn/labels/Needs%20Triage",
+        "name": "Needs Triage",
+        "color": "FF0000",
+        "default": false,
+        "description": "Issue requires triage",
+        "archived_at": null,
+        "archived_by": null
+      }
+    ],
+    "state": "open",
+    "locked": false,
+    "assignees": [],
+    "milestone": null,
+    "comments": 0,
+    "created_at": "2026-10-10T10:43:34Z",
+    "updated_at": "2026-10-10T10:56:25Z",
+    "closed_at": null,
+    "assignee": null,
+    "author_association": "NONE",
+    "issue_field_values": [],
+    "type": null,
+    "active_lock_reason": null,
+    "sub_issues_summary": {
+      "total": 0,
+      "completed": 0,
+      "percent_completed": 0
+    },
+    "issue_dependencies_summary": {
+      "blocked_by": 0,
+      "total_blocked_by": 0,
+      "blocking": 0,
+      "total_blocking": 0
+    },
+    "body": "> [!WARNING]\n> This issue is not yet ready for a PR. If you are interested in contributing to scikit-learn, please have a look at our [contributing guidelines](https://scikit-learn.org/dev/developers/contributing.html), and in particular the sections for [new contributors](https://scikit-learn.org/dev/developers/contributing.html#new-contributors) and the [\"Needs triage\"](https://scikit-learn.org/dev/developers/contributing.html#issues-tagged-needs-triage) label.\n\n### Introduce yourself\n\nHi! I'm a machine learning developer. I use scikit-learn regularly for building predictive models and data analysis.\n\nWhile researching how tree-based models handle highly separable datasets, I noticed an unexpected drop in accuracy in a specific edge case. I dug into the source code to understand why the model was failing to learn the separation and managed to trace it down to this specific floating-point rounding tie in the binning logic.\n\n### Describe the bug and give evidence about its user-facing impact\n\nThere is a floating-point precision flaw in the HistGradientBoosting binning logic. When the algorithm computes the arithmetic midpoint between two very close, distinct floating-point values, the finite midpoint can round upward to equal the upper data value.\n\nBecause the threshold comparison is upper-inclusive (<= threshold), both distinct values are incorrectly lumped into the exact same bin. This prevents perfectly separable targets from being learned by the model.\n\n### Steps/Code to Reproduce\n\nHere is a minimal reproducer where 20 zeros and 20 ones are perfectly separable, but the model completely fails to distinguish them and predicts 0.5 for everything due to the midpoint rounding tie:\n```python\nimport numpy as np\nfrom sklearn.ensemble import HistGradientBoostingRegressor\n\n# Create distinct values separated by a tiny margin\nx_base = np.array([1, 2], dtype=np.float64)\nx_transformed = 1 + (2**-52) * x_base\n\n# Repeat to satisfy default min_samples_leaf=20\nX = np.repeat(x_transformed, 20).reshape(-1, 1)\ny = np.repeat([0, 1], 20)\n\n# One boosting step with learning_rate=1 should perfectly separate this\nmodel = HistGradientBoostingRegressor(max_iter=1, learning_rate=1.0)\nmodel.fit(X, y)\n\nprint(\"Predictions:\", model.predict(X))\n```\n### Expected Results\n\nThe distinct values should be separated into different bins, allowing the tree to split them and predict [0, 1] accurately.\n\n### Actual Results\n\nThe midpoint rounds to the upper value, placing both sets of data into bin 0. The model predicts 0.5 for all samples.\n\n### Versions\n\n```shell\n1.9.1 and current main\n```\n\n### Interest in fixing the bug\n\nYes, I am interested in fixing this.\n\nRoot cause and strategy: The root cause is that the arithmetic midpoint of two adjacent distinct floats can round upward to precisely equal the upper float. Because the threshold split uses <=, both values are assigned to the same bin. The strategy for the fix is to detect when the computed finite midpoint equals the upper bound and in that specific case, replace the threshold with the lower bound. This mathematically guarantees the values are separated.\n\nI already have a C-level patch and a suite of 84 regression tests prepared locally that successfully implements this strategy. I will wait for this issue to be triaged, but I am ready to open a PR for this as soon as the team approves.\n\nDisclosure: An AI assistant helped me isolate the binary64 rounding mechanism that causes this failure. I have manually verified the math and the failure.",
+    "closed_by": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/scikit-learn/scikit-learn/issues/35119/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/scikit-learn/scikit-learn/issues/35119/timeline",
+    "performed_via_github_app": null,
+    "state_reason": null,
+    "pinned_comment": null
+  }
+]
