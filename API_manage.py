@@ -34,7 +34,6 @@ def get_json(endpoint, params=None):
             "Check the repository owner/name, "
             "visibility, and authentication permissions."
         )
-
     response.raise_for_status()
     return response.json()
 
