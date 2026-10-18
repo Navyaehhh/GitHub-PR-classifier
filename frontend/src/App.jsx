@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
+import Logo from '/Images/Logo.png'
 import './App.css'
 
 function App() {
@@ -10,24 +10,17 @@ function App() {
   return (
     <>
       <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+
         <div>
           <h1>PRISM</h1>
           <p>
-            <input type="link" id="GitHub-link" placeholder="Enter your Github Link"></input>\
-            <button onclick="return GitHubdata()">Enter</button>
+            <input type="link" id="GitHub-link" placeholder="Enter your Github Link"></input>
           </p>
         </div>
         <button
           type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+          className="counter">
+          Enter
         </button>
       </section>
 
