@@ -908,7 +908,7 @@ export default function App() {
               <X size={18} />
             </button>
 
-            <div className="modal-logo"><Github size={28} /></div>
+            <div className="modal-logo"><GitPullRequest size={28} /></div>
 
             <h2 id="modal-title">Connect a repository</h2>
             <p>
@@ -920,12 +920,10 @@ export default function App() {
               <label htmlFor="repo-url">Repository URL</label>
 
               <input
-                id="repo-url"
+                id="repository-url"
+                name="repositoryUrl"
                 type="url"
-                required
-                value={repoUrl}
-                onChange={(event) => setRepoUrl(event.target.value)}
-                placeholder="https://github.com/owner/repo"
+                placeholder="Enter GitHub repository URL"
               />
 
               <small>
