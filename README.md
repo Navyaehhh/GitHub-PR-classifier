@@ -76,11 +76,9 @@ flowchart TD
 - 🟢 Green: Implemented or integration in progress
 - 🟠 Orange: Planned or under development
 - Dashed arrows: Future database integration
-```
-```
 
 ## Project Structure
-
+```
     PRISM/
 ├── frontend/
 │   ├── src/
@@ -97,4 +95,4 @@ flowchart TD
 ├── backend.py           # Python backend entry point
 ├── .gitignore
 └── README.md
-
+```
