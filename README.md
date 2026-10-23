@@ -29,35 +29,55 @@ The system follows a modular approach:
 
 The long-term objective is to move beyond displaying pull request information and toward explaining what changed, how substantial the change is, and what aspects deserve a closer review.
 
+## Project Vision
+PRISM aims to make pull request review more systematic by combining
+GitHub data retrieval, interpretable structural metrics, and a clear
+dashboard. The long-term objective is to help maintainers understand
+what changed, how broadly the codebase is affected, and what deserves
+closer review.
+
 ## System Architecture
 
 The diagram below shows the intended end-to-end architecture. Components
 marked as planned are not claims that the functionality is already
 implemented.
+
+```mermaid
 flowchart TD
-    U[User] -->|Enters GitHub repository URL| FE[React Frontend]
-    FE -->|Analysis request| BE[Python Backend]
-    BE -->|Repository and PR requests| API[GitHub REST API]
-    API -->|JSON response: repository, PRs, files and metadata| BE
+    U([User]) -->|Repository URL| FE[React Frontend]
+    FE -->|Analysis Request| BE[Python Backend - FastAPI]
+    BE -->|Fetch Repository Data| API[GitHub REST API]
+    API -->|JSON Response: Repository, PRs, Files| BE
 
     BE --> DP[Data Processing]
     DP --> SM[Structural Metrics Engine]
     SM --> CE[Contribution Evaluation]
-    CE --> DB[(MySQL Persistence - Planned)]
 
-    DB -->|Stored results, when implemented| OUT[Structured Analysis Results]
-    CE -.->|Without persistence| OUT
-    OUT -->|API response| FE
+    CE --> OUT[Structured Analysis Results]
+    CE -.-> DB[(MySQL Database - Planned)]
+    DB -.->|Future Data Retrieval| OUT
+
+    OUT -->|Analysis Response| FE
     FE --> DASH[Results Dashboard]
+
     DASH --> R1[Repository Overview]
     DASH --> R2[Pull Request Details]
-    DASH --> R3[Structural Metrics]
-    DASH --> R4[Review Guidance]
+    DASH --> R3[Structural Metrics - Planned]
+    DASH --> R4[Review Guidance - Planned]
 
-    classDef implemented fill:#e8f5e9,stroke:#2e7d32,color:#173b20
+    classDef active fill:#e8f5e9,stroke:#2e7d32,color:#173b20
     classDef planned fill:#fff3e0,stroke:#ef6c00,color:#663c00
-    class U,FE,BE,API,DP implemented
-    class SM,CE,DB planned
+
+    class U,FE,BE,API,DP,OUT,DASH,R1,R2 active
+    class SM,CE,DB,R3,R4 planned
+```
+
+### Legend
+- 🟢 Green: Implemented or integration in progress
+- 🟠 Orange: Planned or under development
+- Dashed arrows: Future database integration
+```
+```
 
 ## Project Structure
 
@@ -78,9 +98,3 @@ flowchart TD
 ├── .gitignore
 └── README.md
 
-## Project Vision
-PRISM aims to make pull request review more systematic by combining
-GitHub data retrieval, interpretable structural metrics, and a clear
-dashboard. The long-term objective is to help maintainers understand
-what changed, how broadly the codebase is affected, and what deserves
-closer review.
