@@ -1,8 +1,9 @@
-
+from urllib.parse import urlparse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
+import GitHubAPI_manage
 app = FastAPI(title="PRISM Backend")
 
 # Allow requests from your React + Vite frontend
@@ -21,32 +22,39 @@ class RepoRequest(BaseModel):
 def home():
     return {"message": "PRISM backend is running"}
 
-@app.post("/analyze")
-def analyze_repo(data: RepoRequest):
-    # Connection test only — add GitHub analysis later
-    return {
-        "message": "Repository received successfully!",
-        "repo_url": data.repo_url
-    }
 
 @app.post("/analyze")
 def analyze_repo(data: RepoRequest):
-    repo_url = data.repo_url.rstrip("/")
+    repo_url = data.repo_url.strip()
+    parsed = urlparse(repo_url)
 
-    # Extract owner and repository name
-    parts = repo_url.removesuffix(".git").split("/")
-    owner = parts[-2]
-    repo = parts[-1]
+    # Validate the GitHub repository URL
+    if parsed.hostname not in {"github.com", "www.github.com"}:
+        return {"error": "Please provide a valid GitHub repository URL."}
 
-    # Request pull requests from GitHub
-    api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
+    parts = parsed.path.strip("/").split("/")
 
-    response = requests.get(
-        api_url,
-        params={"state": "all", "per_page": 100},
-        headers={"Accept": "application/vnd.github+json"},
-        timeout=15
-    )
+    if len(parts) != 2 or not all(parts):
+        return {
+            "error": "URL must contain both owner and repository name."
+        }
+
+    owner = parts[0]
+    repo = parts[1].removesuffix(".git")
+
+    # Fetch pull requests from GitHub
+    result = GitHubAPI_manage.ingest_repository(owner, repo)
+    return result
+
+    try:
+        response = requests.get(
+            api_url,
+            params={"state": "all", "per_page": 100},
+            headers={"Accept": "application/vnd.github+json"},
+            timeout=15
+        )
+    except requests.RequestException:
+        return {"error": "Could not connect to GitHub."}
 
     if response.status_code != 200:
         return {
@@ -56,15 +64,12 @@ def analyze_repo(data: RepoRequest):
 
     pull_requests = response.json()
 
-    # Keep only useful fields for PRISM
     results = [
         {
             "number": pr["number"],
             "title": pr["title"],
             "author": pr["user"]["login"],
             "state": pr["state"],
-            "additions": pr["additions"],
-            "deletions": pr["deletions"],
             "url": pr["html_url"]
         }
         for pr in pull_requests
